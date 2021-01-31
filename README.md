@@ -49,7 +49,7 @@ sudo apt install sqlite3
 
 We're ready for the bits specific to this project now! 
 
-- Create a new directory for the code to live in
+- Create a new directory for the code to live in and download it from this repo
 ```
 mkdir octopus-agile-pi-prices
 cd octopus-agile-pi-prices
@@ -70,13 +70,13 @@ chmod +x *.py
 
 - Run **crontab -e** on the pi and add _something like this_ : 
 
-  ```
+```
 @reboot sleep 10; cd /home/pi/octopus-agile-pi-prices; /usr/bin/python3 octoprice_main_inky.py
 0,30 * * * * sleep 20; cd /home/pi/octopus-agile-pi-prices; /usr/bin/python3 octoprice_main_inky.py >> /home/pi/cron.log 2>&1
 05 16 * * * cd /home/pi/octopus-agile-pi-prices; /usr/bin/python3 store_prices.py > /home/pi/cron.log
-  ```
+```
 
-  First line says run the script if you reboot, second line says run every half hour (but delay by 20s to avoid time based issues!), third line is quite important, runs every day at 4:05pm to get the next set of prices. Nothing unusual here. 
+First line says run the script if you reboot, second line says run every half hour (but delay by 20s to avoid time based issues!), third line is quite important, runs every day at 4:05pm to get the next set of prices. Nothing unusual here. 
 
 Crontab doesn't play nicely with the script being in a subdirectory as no paths are used within the .py files. I've added an explicit cd command to handle this but plan to wrap everything up into a shell script which would make life easier.
 
