@@ -62,15 +62,23 @@ In an SSH terminal (putty etc):
   python3 create_price_db.py
   ```
 - Open store_prices.py (using nano or whatever) and edit the top lines where you need to change the tariff code. You will find this on your agile dashboard. It's basically a string ending in the letter A to P depending where you live. https://octopus.energy/dashboard/developer/
+
+- Make the scripts executable using:
+```
+chmod +x *.py
+```
+
 - Run **crontab -e** on the pi and add _something like this_ : 
 
   ```
-  @reboot sleep 10; python3 /home/pi/octopus-agile-pi-prices/octoprice_main_inky.py
-  0,30 * * * * sleep 20; python3 /home/pi/octopus-agile-pi-prices/octoprice_main_inky.py > /home/pi/cron.log
-  05 16 * * * python3 /home/pi/octopus-agile-pi-prices/store_prices.py > /home/pi/cron.log
+@reboot sleep 10; cd /home/pi/octopus-agile-pi-prices; /usr/bin/python3 octoprice_main_inky.py
+0,30 * * * * sleep 20; cd /home/pi/octopus-agile-pi-prices; /usr/bin/python3 octoprice_main_inky.py >> /home/pi/cron.log 2>&1
+05 16 * * * cd /home/pi/octopus-agile-pi-prices; /usr/bin/python3 store_prices.py > /home/pi/cron.log
   ```
 
-  First line says run the script if you reboot, second line says run every half hour (but delay by 20s to avoid time based issues!),     third line is quite important, runs every day at 4:05pm to get the next set of prices. Nothing unusual here. 
+  First line says run the script if you reboot, second line says run every half hour (but delay by 20s to avoid time based issues!), third line is quite important, runs every day at 4:05pm to get the next set of prices. Nothing unusual here. 
+
+Crontab doesn't play nicely with the script being in a subdirectory as no paths are used within the .py files. I've added an explicit cd command to handle this but plan to wrap everything up into a shell script which would make life easier.
 
 - Done! Fix it to the wall! 
 
