@@ -8,7 +8,9 @@
 # You also need to update store_prices.py to include your own API access credentials and tariff.
 
 
-from inky import InkyPHAT
+#from inky import InkyPHAT
+from inky.auto import auto
+
 #from font_hanken_grotesk import HankenGroteskBold, HankenGroteskMedium  # should you choose to switch to gross fonts
 #from font_intuitive import Intuitive
 from font_fredoka_one import FredokaOne  # this is the font we're currently using
@@ -21,8 +23,9 @@ import datetime
 import pytz
 import time
 
-##  -- Display type = red. Change below if you have the yellow
-inky_display = InkyPHAT("red")
+##  -- Display type  is set automatically in the newer library
+# Don't change any values of RED to yellow as red just equals "colour"
+inky_display = auto(ask_user=True, verbose=True)
 ## --   ----------------------------------------------------
 
 inky_display.set_border(inky_display.WHITE)
@@ -173,14 +176,14 @@ for offset in range(0, 48):  ##24h = 48 segments
 
 
 
-
-font = ImageFont.truetype(FredokaOne, 60)
+# Draw current price
+font = ImageFont.truetype(FredokaOne, 55)
 message = "{0:.1f}".format(current_price) + "p"
 w, h = font.getsize(message)
 #x = (inky_display.WIDTH / 2) - (w / 2)
-#y = (inky_display.HEIGHT / 2) - (h / 2)
+y = -10
 x = 0
-y = -5
+
 
 if (current_price > 14.8):
 	draw.text((x, y), message, inky_display.RED, font)
@@ -191,22 +194,24 @@ else:
 right_column = 145
 
 
-# NEXT
+# NEXT 2
 message = "2:" + "{0:.1f}".format(next_price) + "p"
 font = ImageFont.truetype(FredokaOne, 20)
 w2, h2 = font.getsize(message)
-x = right_column
+x = (inky_display.WIDTH - w2)
+#x = right_column
 y = 0
 if (next_price > 14.8):
 	draw.text((x,y), message, inky_display.RED, font)
 else:
 	draw.text((x, y), message, inky_display.BLACK, font)
 
-# NEXT
+# NEXT 3
 message = "3:" + "{0:.1f}".format(nextp1_price) + "p"
 font = ImageFont.truetype(FredokaOne, 20)
 w3, h3 = font.getsize(message)
-x = right_column
+x = (inky_display.WIDTH - w3)
+#x = right_column
 y = 20
 
 if (nextp1_price > 14.8):
@@ -215,11 +220,12 @@ else:
 	draw.text((x, y), message, inky_display.BLACK, font)
 
 
-# NEXT
+# NEXT 4
 message = "4:" + "{0:.1f}".format(nextp2_price) + "p"
 font = ImageFont.truetype(FredokaOne, 20)
 w3, h3 = font.getsize(message)
-x = right_column
+x = (inky_display.WIDTH - w3)
+#x = right_column
 y = 40
 
 if (nextp2_price > 14.8):
@@ -230,18 +236,33 @@ else:
 
 pixels_per_h = 2  # how many pixels 1p is worth
 pixels_per_w = 3  # how many pixels 1/2 hour is worth
-chart_base_loc = 104  # location of the bottom of the chart on screen in pixels
-#chart_base_loc = 85  # location of the bottom of the chart on screen in pixels
 number_of_vals_to_display = 48 # 36 half hours = 18 hours
 
 # plot the graph
-#lowest_price_next_24h = min(i for i in prices if i > 0)
 lowest_price_next_24h = min(i for i in prices)
+
+#average price
+sum_of_price = 0
+number_included = number_of_vals_to_display
+for i in range(0,number_of_vals_to_display):
+	if prices[i] != 999:
+		sum_of_price += prices[i]
+		#print (prices[i])
+	else:
+		sum_of_price += 0
+		number_included -= 1
+		#print (prices[i])
+
+average_price_next_24h = sum_of_price/number_included
+
 if (lowest_price_next_24h < 0):
 	chart_base_loc = 104 + lowest_price_next_24h*pixels_per_h - 2 # if we have any negative prices, shift the base of the graph up! 
+else:
+	chart_base_loc = (inky_display.HEIGHT-1)
 
-print("lowest price Position:", prices.index(lowest_price_next_24h))
-print("low Value:", lowest_price_next_24h)
+
+print ("lowest price Position:", prices.index(lowest_price_next_24h))
+print ("low Value:", lowest_price_next_24h)
 
 # go through each hour and get the value
 
@@ -256,38 +277,69 @@ for i in range(0,number_of_vals_to_display):
 
 		# takes a bit of thought this next bit, draw a rectangle from say x =  2i to 2(i-1) for each plot value
 		# pixels_per_w defines the horizontal scaling factor (2 seems to work)
-		draw.rectangle((pixels_per_w*i,chart_base_loc,((pixels_per_w*i)-pixels_per_w),(chart_base_loc-scaled_price)),ink_color)
+		draw.rectangle((pixels_per_w*i,chart_base_loc,((pixels_per_w*i)-pixels_per_w),(chart_base_loc-scaled_price)),ink_color,inky_display.BLACK)
 
 #draw minimum value on chart  <- this doesn't seem to work yet
 # font = ImageFont.truetype(FredokaOne, 15)
-# msg = "{0:.1f}".format(lowest_price_next_24h) + "p"
-# draw.text((4*(minterval-1),110),msg, inky_display.BLACK, font)
+# message = "{0:.1f}".format(lowest_price_next_24h) + "p"
+# draw.text((4*(minterval-1),110),message, inky_display.BLACK, font)
 
 # draw the bottom right min price and how many hours that is away
+
 font = ImageFont.truetype(FredokaOne, 15)
-msg = "min:"+"{0:.1f}".format(lowest_price_next_24h) + "p"
-draw.text((right_column,60), msg, inky_display.BLACK, font)
-# we know how many half hours to min price, now figure it out in hours.
+message = "min:"+"{0:.1f}".format(lowest_price_next_24h) + "p"
+w5, h5 = font.getsize(message)
+x = inky_display.WIDTH - w5
+#draw.text((x,67), message, inky_display.BLACK, font)
+## we know how many half hours to min price, now figure it out in hours.
 minterval = (round(prices.index(lowest_price_next_24h)/2))
 print ("minterval:"+str(minterval))
-msg = "in:"+str(minterval)+"hrs"
-draw.text((right_column,75), msg, inky_display.BLACK, font)
+#message = "in:"+str(minterval)+"hrs"
+#draw.text((right_column,75), message, inky_display.BLACK, font)
+
+
+
+
+
+
+
+#average:
+font = ImageFont.truetype(FredokaOne, 15)
+message = "avg:"+"{0:.1f}".format(average_price_next_24h) + "p"
+w6, h6 = font.getsize(message)
+x = inky_display.WIDTH - w6
+draw.text((x,97), message, inky_display.BLACK, font)
+
 
 # and convert that to an actual time
 # note that this next time will not give you an exact half hour if you don't run this at an exact half hour eg cron
 # because it's literally just adding n * 30 mins!
 # could in future add some code to round to 30 mins increments but it works for now.
 
-
-
 min_offset = prices.index(lowest_price_next_24h) * 30
 time_of_cheapest = the_now_local + datetime.timedelta(minutes=min_offset)
-print("cheapest at " + str(time_of_cheapest))
-print("which is: "+ str(time_of_cheapest.time())[0:5])
+print ("cheapest at " + str(time_of_cheapest))
+print ("which is: "+ str(time_of_cheapest.time())[0:5])
 time_of_cheapest_formatted = "at " + (str(time_of_cheapest.time())[0:5])
+#message = time_of_cheapest_formatted
+message = "min:" + "{0:.1f}".format(lowest_price_next_24h) + "p " + time_of_cheapest_formatted
 font = ImageFont.truetype(FredokaOne, 15)
-draw.text((right_column,90), time_of_cheapest_formatted, inky_display.BLACK, font)
+w7, h7 = font.getsize(message)
+x = inky_display.WIDTH - w7
+#draw.text((x,82), message, inky_display.BLACK, font)
+draw.text((x,67), message, inky_display.BLACK, font)
+
+
+print ("Average Value:", average_price_next_24h)
+
+
+
+#render image flipped 180 degrees
+flipped = img.rotate(180)
+inky_display.set_image(flipped)
+inky_display.show()
+
 
 # render the actual image onto the display
-inky_display.set_image(img)
-inky_display.show()
+#inky_display.set_image(img)
+#inky_display.show()
